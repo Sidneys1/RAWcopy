@@ -1,168 +1,144 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
-namespace RAWcopy
-{
-	class Program
-	{
-		[STAThread()]
-		static void Main(string[] args)
-		{
-			string[] autoFile = null;
+namespace RAWcopy {
+    internal class Program {
+        [STAThread]
+        private static void Main() {
+            string[] autoFile = null;
 
-			if (File.Exists(".\\RAWcopy_auto.cfg"))
-			{
-				autoFile = File.ReadAllLines(".\\RAWcopy_auto.cfg");
-			}
+            if (File.Exists(".\\RAWcopy_auto.cfg"))
+                autoFile = File.ReadAllLines(".\\RAWcopy_auto.cfg");
 
-			#region Copy From File
+            #region Copy From File
 
-			string copyFile = "";
-			if (autoFile == null)
-			{
-				Console.Write("Enter path of file to copy from: ");
-				copyFile = Console.ReadLine();
-			}
-			else
-			{
-				copyFile = autoFile[0];
-			}
+            string copyFile;
+            if (autoFile == null) {
+                Console.Write("Enter path of file to copy from: ");
+                copyFile = Console.ReadLine();
+            }
+            else {
+                copyFile = autoFile[0];
+            }
 
-			copyFile = copyFile.Replace("\"", "");
+            copyFile = copyFile?.Replace("\"", "");
 
-			try
-			{
-				ValidateFile(copyFile);
-			}
-			catch (FileNotFoundException ex)
-			{
-				Console.WriteLine(string.Format("Error! {0} Aborting... (Press Enter to Exit)", ex.Message));
-				Console.ReadLine();
-				return;
-			}
+            try {
+                ValidateFile(copyFile);
+            }
+            catch (FileNotFoundException ex) {
+                Console.WriteLine("Error! {0} Aborting... (Press Enter to Exit)", ex.Message);
+                Console.ReadLine();
+                return;
+            }
 
-			Console.WriteLine("File validated!");
+            Console.WriteLine("File validated!");
 
-			#endregion
+            #endregion
 
-			FileStream stream = null;
+            FileStream stream;
 
-			try
-			{
-				stream = System.IO.File.OpenRead(copyFile);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(string.Format("Error! {0} Aborting! (Press Enter to Exit)", ex.Message));
-				Console.ReadLine();
-				return;
-			}
+            try {
+                stream = File.OpenRead(copyFile);
+            }
+            catch (Exception ex) {
+                Console.WriteLine("Error! {0} Aborting! (Press Enter to Exit)", ex.Message);
+                Console.ReadLine();
+                return;
+            }
 
-			#region Bytes
+            #region Bytes
 
-			long numBytes = -1;
+            long numBytes;
 
-			if (autoFile == null)
-			{
-				Console.WriteLine();
-				Console.Write("Number of Bytes to copy (0 to copy all): ");
-				numBytes = long.Parse(Console.ReadLine());
-			}
-			else
-				numBytes = long.Parse(autoFile[1]);
+            if (autoFile == null) {
+                Console.WriteLine();
+                Console.Write("Number of Bytes to copy (0 to copy all): ");
+                numBytes = long.Parse(Console.ReadLine()??"0");
+            }
+            else {
+                numBytes = long.Parse(autoFile[1]);
+            }
 
-			if (numBytes >= stream.Length || numBytes <= 0)
-			{
-				Console.WriteLine(string.Format("Number of Bytes automatically set to {0}.", stream.Length));
-				numBytes = stream.Length;
-			} 
+            if (numBytes >= stream.Length || numBytes <= 0) {
+                Console.WriteLine("Number of Bytes automatically set to {0}.", stream.Length);
+                numBytes = stream.Length;
+            }
 
-			#endregion
+            #endregion
 
-			byte[] copy = new byte[numBytes];
+            var copy = new byte[numBytes];
 
-			int read = stream.Read(copy, 0, (int)numBytes);
+            var read = stream.Read(copy, 0, (int) numBytes);
 
-			stream.Close();
+            stream.Close();
 
-			Console.WriteLine(string.Format("Read {0} bytes and closed stream.", read));
+            Console.WriteLine("Read {0} bytes and closed stream.", read);
 
 
-			if (numBytes < 1024)
-			{
-				Console.WriteLine("Less than 1MB. Displaying data:");
-				for (int i = 0; i < copy.Length; i++)
-				{
-					Console.Write(string.Format("{0:X2} ", copy[i]));
-					if ((i + 1) % 16 == 0)
-						Console.WriteLine();
-				}
-			}
+            if (numBytes < 1024) {
+                Console.WriteLine("Less than 1MB. Displaying data:");
+                for (var i = 0; i < copy.Length; i++) {
+                    Console.Write("{0:X2} ", copy[i]);
+                    if ((i + 1) % 16 == 0)
+                        Console.WriteLine();
+                }
+            }
 
-			
-			Console.WriteLine();
-			Console.WriteLine(string.Format("Successfully copied {0} bytes!", numBytes));
-			Console.WriteLine();
 
-			#region Paste File
+            Console.WriteLine();
+            Console.WriteLine("Successfully copied {0} bytes!", numBytes);
+            Console.WriteLine();
 
-			string pasteFile = "";
+            #region Paste File
 
-			if (autoFile == null)
-			{
-				Console.Write("Enter path of file to copy to: ");
-				pasteFile = Console.ReadLine();
-			}
-			else
-				pasteFile = autoFile[2];
+            string pasteFile;
 
-			pasteFile = pasteFile.Replace("\"", "");
+            if (autoFile == null) {
+                Console.Write("Enter path of file to copy to: ");
+                pasteFile = Console.ReadLine();
+            }
+            else {
+                pasteFile = autoFile[2];
+            }
 
-			try
-			{
-				ValidateFile(pasteFile);
-			}
-			catch (FileNotFoundException ex)
-			{
-				Console.WriteLine(string.Format("Error! {0} Aborting... (Press Enter to Exit)", ex.Message));
-				Console.ReadLine();
-				return;
-			}
+            pasteFile = pasteFile?.Replace("\"", "");
 
-			#endregion
+            try {
+                ValidateFile(pasteFile);
+            }
+            catch (FileNotFoundException ex) {
+                Console.WriteLine("Error! {0} Aborting... (Press Enter to Exit)", ex.Message);
+                Console.ReadLine();
+                return;
+            }
 
-			FileStream paste = null;
+            #endregion
 
-			try
-			{
-				paste = System.IO.File.OpenWrite(pasteFile);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(string.Format("Error! {0} Aborting! (Press Enter to Exit)", ex.Message));
-				Console.ReadLine();
-				return;
-			}
+            FileStream paste;
 
-			paste.Write(copy, 0, (int)numBytes);
+            try {
+                paste = File.OpenWrite(pasteFile);
+            }
+            catch (Exception ex) {
+                Console.WriteLine("Error! {0} Aborting! (Press Enter to Exit)", ex.Message);
+                Console.ReadLine();
+                return;
+            }
 
-			paste.Flush();
-			paste.Close();
+            paste.Write(copy, 0, (int) numBytes);
 
-			Console.WriteLine(string.Format("{0} Bytes pasted! Complete!", numBytes));
+            paste.Flush();
+            paste.Close();
 
-			Console.ReadLine();
-		}
+            Console.WriteLine("{0} Bytes pasted! Complete!", numBytes);
 
-		private static void ValidateFile(string copyFile)
-		{
-			if (!File.Exists(copyFile))
-				throw new System.IO.FileNotFoundException(string.Format("File \"{0}\" does not exist.", copyFile));
-		}
-	}
+            Console.ReadLine();
+        }
+
+        private static void ValidateFile(string copyFile) {
+            if (!File.Exists(copyFile))
+                throw new FileNotFoundException($"File \"{copyFile}\" does not exist.");
+        }
+    }
 }
